@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Canvas as ThreeCanvas, useThree } from "@react-three/fiber";
-import "@react-three/fiber";
 
 export type CanvasMediaProps = {
   debugOrbit?: boolean;
