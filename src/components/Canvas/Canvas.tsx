@@ -4,8 +4,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { Canvas as ThreeCanvas, useThree } from "@react-three/fiber";
 import "@react-three/fiber";
 
-import CameraLogger from "@/components/CameraLogger";
-
 export type CanvasMediaProps = {
   debugOrbit?: boolean;
   size: { width: number; height: number } | null;
@@ -96,7 +94,6 @@ const Canvas: React.FC<CanvasProps> = ({
             width={parentSize.width}
           />
         )}
-        {mediaProps?.debugOrbit && <CameraLogger />}
         <ambientLight intensity={1} />
         <pointLight position={[10, 10, 10]} />
         {React.cloneElement(children as React.ReactElement, mergedMediaProps)}

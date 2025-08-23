@@ -20,7 +20,7 @@ export const usePreviewUrl = (
 
     const fullUrl = `${
       basePath || window.location.pathname
-    }?${params.toString()}`;
+    }?${params.toString()}&f=1`;
     setUrl(fullUrl);
   }, [values, basePath]);
 
