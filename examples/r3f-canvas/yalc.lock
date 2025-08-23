@@ -1,0 +1,9 @@
+{
+  "version": "v1",
+  "packages": {
+    "@toriistudio/v0-playground-canvas": {
+      "signature": "b08c4a5eee4aaa884deed5e07d0eb7b5",
+      "file": true
+    }
+  }
+}
