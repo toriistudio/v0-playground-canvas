@@ -9,6 +9,7 @@ export default defineConfig([
     dts: true,
     clean: true,
     target: "esnext",
+    external: ["react/jsx-runtime", "react/jsx-dev-runtime"],
   },
   {
     entry: {
@@ -18,5 +19,6 @@ export default defineConfig([
     dts: true,
     clean: false,
     target: "esnext",
+    external: ["react/jsx-runtime", "react/jsx-dev-runtime"],
   },
 ]);
