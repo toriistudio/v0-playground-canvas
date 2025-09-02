@@ -9,7 +9,16 @@ export default defineConfig([
     dts: true,
     clean: true,
     target: "esnext",
-    external: ["react/jsx-runtime", "react/jsx-dev-runtime"],
+    external: [
+      "react",
+      "react-dom",
+      "@react-three/fiber",
+      "@react-three/drei",
+      "three",
+      "three-stdlib",
+      "react/jsx-runtime",
+      "react/jsx-dev-runtime",
+    ],
   },
   {
     entry: {
@@ -19,6 +28,15 @@ export default defineConfig([
     dts: true,
     clean: false,
     target: "esnext",
-    external: ["react/jsx-runtime", "react/jsx-dev-runtime"],
+    external: [
+      "react",
+      "react-dom",
+      "@react-three/fiber",
+      "@react-three/drei",
+      "three",
+      "three-stdlib",
+      "react/jsx-runtime",
+      "react/jsx-dev-runtime",
+    ],
   },
 ]);
