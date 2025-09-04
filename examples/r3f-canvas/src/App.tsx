@@ -45,62 +45,69 @@ function InnerPreview() {
     easing,
     color,
     setValue,
-  } = useControls({
-    pictureUrl: {
-      type: "string",
-      value: DEFAULT_PICTURE_URL,
-      hidden: true,
+  } = useControls(
+    {
+      pictureUrl: {
+        type: "string",
+        value: DEFAULT_PICTURE_URL,
+        hidden: true,
+      },
+      pointSizeBase: {
+        type: "number",
+        value: 0.05,
+        min: 0.01,
+        max: 1,
+        step: 0.01,
+      },
+      displacementStrength: {
+        type: "number",
+        value: 3,
+        min: 0,
+        max: 10,
+        step: 0.5,
+      },
+      glowSizeFactor: {
+        type: "number",
+        value: 0.25,
+        min: 0.05,
+        max: 1,
+        step: 0.05,
+      },
+      intensityScale: { type: "number", value: 1, min: 0, max: 5, step: 0.01 },
+      color: { type: "color", value: "#ffffff" },
+      easing: {
+        options: easingFns,
+        value: "easeOutCubic",
+        type: "select",
+      },
+      imageUpload: {
+        type: "button",
+        render: () => (
+          <>
+            <Button onClick={handleImageUpload}>
+              <Upload /> Upload your image
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                processImage(file);
+              }}
+              className="hidden"
+            />
+          </>
+        ),
+      },
     },
-    pointSizeBase: {
-      type: "number",
-      value: 0.05,
-      min: 0.01,
-      max: 1,
-      step: 0.01,
-    },
-    displacementStrength: {
-      type: "number",
-      value: 3,
-      min: 0,
-      max: 10,
-      step: 0.5,
-    },
-    glowSizeFactor: {
-      type: "number",
-      value: 0.25,
-      min: 0.05,
-      max: 1,
-      step: 0.05,
-    },
-    intensityScale: { type: "number", value: 1, min: 0, max: 5, step: 0.01 },
-    color: { type: "color", value: "#ffffff" },
-    easing: {
-      options: easingFns,
-      value: "easeOutCubic",
-      type: "select",
-    },
-    imageUpload: {
-      type: "button",
-      render: () => (
-        <>
-          <Button onClick={handleImageUpload}>
-            <Upload /> Upload your image
-          </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              processImage(file);
-            }}
-            className="hidden"
-          />
-        </>
-      ),
-    },
-  });
+    {
+      config: {
+        layout: "popover",
+      },
+    }
+  );
 
   return (
     <CanvasParticles

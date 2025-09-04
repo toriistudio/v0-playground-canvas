@@ -49,6 +49,15 @@ const ControlPanel: React.FC = () => {
     return `<${componentName} ${props} />`;
   }, [componentName, values]);
 
+  // Format raw schema keys into human-friendly labels
+  const labelize = (key: string) =>
+    key
+      .replace(/([A-Z])/g, " $1")
+      .replace(/[\-_]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/(^|\s)\S/g, (s) => s.toUpperCase());
+
   return (
     <div
       className={`order-2 md:order-1 w-full md:h-auto p-2 md:p-4 bg-stone-900 font-mono text-stone-300 transition-opacity duration-300 ${
@@ -72,43 +81,53 @@ const ControlPanel: React.FC = () => {
           : {}),
       }}
     >
-      <div className="mb-10 space-y-4 p-2 md:p-4 border border-stone-700 rounded-md">
+      <div className="dark mb-10 space-y-6 p-4 md:p-6 bg-stone-900/95 backdrop-blur-md border-2 border-stone-700 rounded-xl shadow-lg">
         <div className="space-y-1">
-          <h1 className="text-lg text-stone-100 font-bold">
+          <h1 className="text-lg text-stone-100 font-semibold">
             {config?.mainLabel ?? "Controls"}
           </h1>
         </div>
 
-        <div className="space-y-4 pt-2">
+        <div className="space-y-6">
           {normalControls.map(([key, control]) => {
             const value = values[key];
 
             switch (control.type) {
               case "boolean":
                 return (
-                  <div
-                    key={key}
-                    className="flex items-center space-x-4 border-t border-stone-700 pt-4"
-                  >
+                  <div key={key} className="flex items-center justify-between">
+                    <Label htmlFor={key} className="cursor-pointer">
+                      {labelize(key)}
+                    </Label>
                     <Switch
                       id={key}
                       checked={value}
                       onCheckedChange={(v) => setValue(key, v)}
-                      className="data-[state=checked]:bg-stone-700 data-[state=unchecked]:bg-stone-700/40"
+                      className="cursor-pointer scale-90"
                     />
-                    <Label htmlFor={key} className="cursor-pointer">
-                      {key}
-                    </Label>
                   </div>
                 );
 
               case "number":
                 return (
-                  <div key={key} className="space-y-2 w-full">
-                    <div className="flex items-center justify-between pb-1">
+                  <div key={key} className="space-y-3 w-full">
+                    <div className="flex items-center justify-between">
                       <Label className="text-stone-300" htmlFor={key}>
-                        {key}: {value}
+                        {labelize(key)}
                       </Label>
+                      <Input
+                        type="number"
+                        value={value}
+                        min={control.min ?? 0}
+                        max={control.max ?? 100}
+                        step={control.step ?? 1}
+                        onChange={(e) => {
+                          const v = parseFloat(e.target.value);
+                          if (Number.isNaN(v)) return;
+                          setValue(key, v);
+                        }}
+                        className="w-20 text-center cursor-text"
+                      />
                     </div>
                     <Slider
                       id={key}
@@ -117,31 +136,33 @@ const ControlPanel: React.FC = () => {
                       step={control.step ?? 1}
                       value={[value]}
                       onValueChange={([v]) => setValue(key, v)}
-                      className="[&>span]:border-none [&_.bg-primary]:bg-stone-800 [&>.bg-background]:bg-stone-500/30"
+                      className="w-full cursor-pointer"
                     />
                   </div>
                 );
 
               case "string":
                 return (
-                  <Input
-                    key={key}
-                    id={key}
-                    value={value}
-                    className={"bg-stone-900"}
-                    placeholder={key}
-                    onChange={(e) => setValue(key, e.target.value)}
-                  />
+                  <div key={key} className="space-y-2 w-full">
+                    <Label className="text-stone-300" htmlFor={key}>
+                      {labelize(key)}
+                    </Label>
+                    <Input
+                      id={key}
+                      value={value}
+                      placeholder={key}
+                      onChange={(e) => setValue(key, e.target.value)}
+                      className="bg-stone-900"
+                    />
+                  </div>
                 );
 
               case "color":
                 return (
                   <div key={key} className="space-y-2 w-full">
-                    <div className="flex items-center justify-between pb-1">
-                      <Label className="text-stone-300" htmlFor={key}>
-                        {key}
-                      </Label>
-                    </div>
+                    <Label className="text-stone-300" htmlFor={key}>
+                      {labelize(key)}
+                    </Label>
                     <input
                       type="color"
                       id={key}
@@ -154,30 +175,31 @@ const ControlPanel: React.FC = () => {
 
               case "select":
                 return (
-                  <div
-                    key={key}
-                    className="space-y-2 border-t border-stone-700 pt-4"
-                  >
-                    <Label className="text-stone-300" htmlFor={key}>
-                      {key}
-                    </Label>
-                    <Select
-                      value={value}
-                      onValueChange={(val) => setValue(key, val)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select option" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(control.options).map(
-                          ([label, _val]) => (
-                            <SelectItem key={label} value={label}>
+                  <div key={key} className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <Label className="min-w-fit" htmlFor={key}>
+                        {labelize(key)}
+                      </Label>
+                      <Select
+                        value={value}
+                        onValueChange={(val) => setValue(key, val)}
+                      >
+                        <SelectTrigger className="flex-1 cursor-pointer">
+                          <SelectValue placeholder="Select option" />
+                        </SelectTrigger>
+                        <SelectContent className="cursor-pointer z-[9999]">
+                          {Object.entries(control.options).map(([label]) => (
+                            <SelectItem
+                              key={label}
+                              value={label}
+                              className="cursor-pointer"
+                            >
                               {label}
                             </SelectItem>
-                          )
-                        )}
-                      </SelectContent>
-                    </Select>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 );
 
@@ -186,11 +208,7 @@ const ControlPanel: React.FC = () => {
             }
           })}
           {(buttonControls.length > 0 || jsx) && (
-            <div
-              className={`${
-                normalControls.length > 0 ? "border-t" : ""
-              } border-stone-700`}
-            >
+            <div>
               {jsx && config?.showCopyButton !== false && (
                 <div key="control-panel-jsx" className="flex-1 pt-4">
                   <button
@@ -199,7 +217,7 @@ const ControlPanel: React.FC = () => {
                       setCopied(true);
                       setTimeout(() => setCopied(false), 5000);
                     }}
-                    className="w-full px-4 py-2 text-sm bg-stone-700 hover:bg-stone-600 text-white rounded flex items-center justify-center gap-2"
+                    className="w-full px-4 py-2 text-sm bg-stone-800 hover:bg-stone-700 text-white rounded-md flex items-center justify-center gap-2 shadow"
                   >
                     {copied ? (
                       <>
@@ -221,14 +239,14 @@ const ControlPanel: React.FC = () => {
                     control.type === "button" ? (
                       <div
                         key={`control-panel-custom-${key}`}
-                        className="flex-1"
+                        className="flex-1 [&_[data-slot=button]]:w-full"
                       >
                         {control.render ? (
                           control.render()
                         ) : (
                           <button
                             onClick={control.onClick}
-                            className="w-full px-4 py-2 text-sm bg-stone-700 hover:bg-stone-600 text-white rounded"
+                            className="w-full px-4 py-2 text-sm bg-stone-800 hover:bg-stone-700 text-white rounded-md shadow"
                           >
                             {control.label ?? key}
                           </button>
@@ -247,7 +265,7 @@ const ControlPanel: React.FC = () => {
               href={previewUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full px-4 py-2 text-sm text-center bg-stone-800 hover:bg-stone-700 text-white rounded"
+              className="w-full px-4 py-2 text-sm text-center bg-stone-900 hover:bg-stone-800 text-white rounded-md border border-stone-700"
             >
               <SquareArrowOutUpRight /> Open in a New Tab
             </a>
