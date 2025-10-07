@@ -13,7 +13,7 @@ import { useCompressedImage } from "@/hooks/useCompressedImage";
 
 import CanvasParticles from "@/components/CanvasParticles";
 
-const DEFAULT_PICTURE_URL = "/v0.png";
+const DEFAULT_PICTURE_URL = "/glow.png";
 
 function InnerPreview() {
   const fileInputRef = useRef<HTMLInputElement>(null);

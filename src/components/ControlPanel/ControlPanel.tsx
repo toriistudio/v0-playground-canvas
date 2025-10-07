@@ -19,9 +19,7 @@ import { useResizableLayout } from "@/context/ResizableLayout";
 import { useControlsContext } from "@/context/ControlsContext";
 
 import { Button } from "@/components/ui/button";
-
-// Amount of control panel that should remain visible on mobile to hint at more content.
-const MOBILE_PEEK_HEIGHT = 56;
+import { MOBILE_CONTROL_PANEL_PEEK } from "@/constants/layout";
 
 const ControlPanel: React.FC = () => {
   const [copied, setCopied] = useState(false);
@@ -79,8 +77,8 @@ const ControlPanel: React.FC = () => {
       });
     } else {
       Object.assign(panelStyle, {
-        marginTop: `-${MOBILE_PEEK_HEIGHT}px`,
-        paddingBottom: `${MOBILE_PEEK_HEIGHT}px`,
+        marginTop: `calc(-1 * (${MOBILE_CONTROL_PANEL_PEEK}px + env(safe-area-inset-bottom, 0px)))`,
+        paddingBottom: `calc(${MOBILE_CONTROL_PANEL_PEEK}px + env(safe-area-inset-bottom, 0px))`,
       });
     }
   }

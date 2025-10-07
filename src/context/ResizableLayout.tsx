@@ -111,7 +111,7 @@ export const ResizableLayout = ({
       <div className="min-h-screen w-full bg-black text-white">
         <div
           ref={containerRef}
-          className="flex flex-col md:flex-row min-h-screen w-full overflow-hidden select-none"
+          className="flex flex-col md:flex-row min-h-screen w-full overflow-x-hidden select-none"
         >
           {children}
 
