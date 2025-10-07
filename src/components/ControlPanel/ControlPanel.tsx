@@ -20,6 +20,9 @@ import { useControlsContext } from "@/context/ControlsContext";
 
 import { Button } from "@/components/ui/button";
 
+// Amount of control panel that should remain visible on mobile to hint at more content.
+const MOBILE_PEEK_HEIGHT = 56;
+
 const ControlPanel: React.FC = () => {
   const [copied, setCopied] = useState(false);
 
@@ -58,6 +61,30 @@ const ControlPanel: React.FC = () => {
       .trim()
       .replace(/(^|\s)\S/g, (s) => s.toUpperCase());
 
+  const panelStyle: React.CSSProperties = {
+    width: "100%",
+    height: "auto",
+    flex: "0 0 auto",
+  };
+
+  if (isHydrated) {
+    if (isDesktop) {
+      Object.assign(panelStyle, {
+        position: "absolute",
+        left: 0,
+        top: 0,
+        bottom: 0,
+        width: `${leftPanelWidth}%`,
+        overflowY: "auto",
+      });
+    } else {
+      Object.assign(panelStyle, {
+        marginTop: `-${MOBILE_PEEK_HEIGHT}px`,
+        paddingBottom: `${MOBILE_PEEK_HEIGHT}px`,
+      });
+    }
+  }
+
   return (
     <div
       className={`order-2 md:order-1 w-full md:h-auto p-2 md:p-4 bg-stone-900 font-mono text-stone-300 transition-opacity duration-300 ${
@@ -65,21 +92,7 @@ const ControlPanel: React.FC = () => {
       }`}
       onPointerDown={(e) => e.stopPropagation()}
       onTouchStart={(e) => e.stopPropagation()}
-      style={{
-        width: "100%",
-        height: "auto",
-        flex: "0 0 auto",
-        ...(isHydrated && isDesktop
-          ? {
-              position: "absolute",
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: `${leftPanelWidth}%`,
-              overflowY: "auto",
-            }
-          : {}),
-      }}
+      style={panelStyle}
     >
       <div className="dark mb-10 space-y-6 p-4 md:p-6 bg-stone-900/95 backdrop-blur-md border-2 border-stone-700 rounded-xl shadow-lg">
         <div className="space-y-1">
