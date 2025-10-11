@@ -85,7 +85,7 @@ const ControlPanel: React.FC = () => {
 
   return (
     <div
-      className={`order-2 md:order-1 w-full md:h-auto p-2 md:p-4 bg-stone-900 font-mono text-stone-300 transition-opacity duration-300 ${
+      className={`order-2 md:order-1 w-full md:h-auto p-2 md:p-4 bg-stone-900 font-mono text-stone-300 transition-opacity duration-300 z-50 ${
         !isHydrated ? "opacity-0" : "opacity-100"
       }`}
       onPointerDown={(e) => e.stopPropagation()}
