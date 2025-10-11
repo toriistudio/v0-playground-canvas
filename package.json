@@ -1,6 +1,6 @@
 {
   "name": "@toriistudio/v0-playground-canvas",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "V0 Playground Canvas",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
