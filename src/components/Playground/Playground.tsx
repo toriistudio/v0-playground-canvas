@@ -1,28 +1,66 @@
 "use client";
 
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { ResizableLayout } from "@/context/ResizableLayout";
 import { ControlsProvider } from "@/context/ControlsContext";
 import ControlPanel from "@/components/ControlPanel";
 import PreviewContainer from "@/components/PreviewContainer";
+import {
+  REMOTE_CONTROLS_CONTROLLER,
+  REMOTE_CONTROLS_PARAM,
+  REMOTE_CONTROLS_VISIBILITY_EVENT,
+} from "@/constants/remoteControl";
 
 const NO_CONTROLS_PARAM = "nocontrols";
 
 export default function Playground({ children }: { children: ReactNode }) {
   const [isHydrated, setIsHydrated] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [controlsHidden, setControlsHidden] = useState(false);
+  const [isRemoteController, setIsRemoteController] = useState(false);
 
   useEffect(() => {
     setIsHydrated(true);
   }, []);
 
-  const hideControls = useMemo(() => {
-    if (typeof window === "undefined") return false;
-    return (
-      new URLSearchParams(window.location.search).get(NO_CONTROLS_PARAM) ===
-      "true"
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const updateFromUrl = () => {
+      const params = new URLSearchParams(window.location.search);
+      setControlsHidden(params.get(NO_CONTROLS_PARAM) === "true");
+      setIsRemoteController(
+        params.get(REMOTE_CONTROLS_PARAM) === REMOTE_CONTROLS_CONTROLLER
+      );
+    };
+
+    updateFromUrl();
+
+    const handlePopState = () => updateFromUrl();
+    window.addEventListener("popstate", handlePopState);
+
+    const visibilityListener: EventListener = (event) => {
+      const customEvent = event as CustomEvent<boolean>;
+      if (typeof customEvent.detail === "boolean") {
+        setControlsHidden(customEvent.detail);
+        return;
+      }
+      setControlsHidden((prev) => !prev);
+    };
+
+    window.addEventListener(
+      REMOTE_CONTROLS_VISIBILITY_EVENT,
+      visibilityListener
     );
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener(
+        REMOTE_CONTROLS_VISIBILITY_EVENT,
+        visibilityListener
+      );
+    };
   }, []);
 
   const handleCopy = () => {
@@ -32,6 +70,8 @@ export default function Playground({ children }: { children: ReactNode }) {
   };
 
   if (!isHydrated) return null;
+
+  const hideControls = !isRemoteController && controlsHidden;
 
   return (
     <ResizableLayout hideControls={hideControls}>
@@ -45,7 +85,10 @@ export default function Playground({ children }: { children: ReactNode }) {
             {copied ? "Copied!" : "Share"}
           </button>
         )}
-        <PreviewContainer hideControls={hideControls}>
+        <PreviewContainer
+          hideControls={hideControls}
+          className={isRemoteController ? "hidden" : undefined}
+        >
           {children}
         </PreviewContainer>
         {!hideControls && <ControlPanel />}

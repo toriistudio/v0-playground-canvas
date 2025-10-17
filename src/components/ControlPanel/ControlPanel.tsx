@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Check, Copy, SquareArrowOutUpRight, ChevronDown } from "lucide-react";
 
 import { usePreviewUrl } from "@/hooks/usePreviewUrl";
@@ -22,16 +22,42 @@ import { Button } from "@/components/ui/button";
 import { MOBILE_CONTROL_PANEL_PEEK } from "@/constants/layout";
 import AdvancedPaletteControl from "@/components/AdvancedPaletteControl";
 
+import {
+  REMOTE_CONTROLS_CONTROLLER,
+  REMOTE_CONTROLS_PARAM,
+  REMOTE_CONTROLS_VISIBILITY_EVENT,
+} from "@/constants/remoteControl";
+
+const NO_CONTROLS_PARAM = "nocontrols";
+
 const ControlPanel: React.FC = () => {
   const [copied, setCopied] = useState(false);
+  const [isRemoteController, setIsRemoteController] = useState(false);
   const [folderStates, setFolderStates] = useState<Record<string, boolean>>({});
 
   const { leftPanelWidth, isDesktop, isHydrated } = useResizableLayout();
 
-  const { schema, setValue, values, componentName, config } =
-    useControlsContext();
+  const {
+    schema,
+    remoteSchema,
+    setValue,
+    triggerButton,
+    values,
+    componentName,
+    config,
+  } = useControlsContext();
+  console.log("[ControlPanel] render", {
+    isRemoteController,
+    schemaKeys: Object.keys(schema),
+    remoteSchemaKeys: Object.keys(remoteSchema),
+  });
 
   const previewUrl = usePreviewUrl(values);
+
+  const schemaEntries = useMemo(() => {
+    const activeSchema = isRemoteController ? remoteSchema : schema;
+    return Object.entries(activeSchema);
+  }, [schema, remoteSchema, isRemoteController]);
 
   const jsx = useMemo(() => {
     if (!componentName) return "";
@@ -45,7 +71,7 @@ const ControlPanel: React.FC = () => {
     return `<${componentName} ${props} />`;
   }, [componentName, values]);
 
-  type ControlEntry = [string, typeof schema[string]];
+  type ControlEntry = [string, (typeof schema)[string]];
 
   const visibleEntries = Object.entries(schema).filter(
     ([, control]) => !control.hidden
@@ -146,7 +172,7 @@ const ControlPanel: React.FC = () => {
 
   const renderButtonControl = (
     key: string,
-    control: Extract<typeof schema[string], { type: "button" }>,
+    control: Extract<(typeof schema)[string], { type: "button" }>,
     variant: "root" | "folder"
   ) => (
     <div
@@ -172,7 +198,7 @@ const ControlPanel: React.FC = () => {
 
   const renderControl = (
     key: string,
-    control: typeof schema[string],
+    control: (typeof schema)[string],
     variant: "root" | "folder"
   ) => {
     if (control.type === "button") {
@@ -269,10 +295,7 @@ const ControlPanel: React.FC = () => {
               <Label className="min-w-fit" htmlFor={key}>
                 {labelize(key)}
               </Label>
-              <Select
-                value={value}
-                onValueChange={(val) => setValue(key, val)}
-              >
+              <Select value={value} onValueChange={(val) => setValue(key, val)}>
                 <SelectTrigger className="flex-1 cursor-pointer">
                   <SelectValue placeholder="Select option" />
                 </SelectTrigger>
@@ -378,6 +401,73 @@ const ControlPanel: React.FC = () => {
     }
   }
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    console.log(
+      "[ControlPanel] useEffect check remote param",
+      window.location.search
+    );
+    const params = new URLSearchParams(window.location.search);
+    setIsRemoteController(
+      params.get(REMOTE_CONTROLS_PARAM) === REMOTE_CONTROLS_CONTROLLER
+    );
+    console.log(
+      "[ControlPanel] isRemoteController set to",
+      params.get(REMOTE_CONTROLS_PARAM) === REMOTE_CONTROLS_CONTROLLER
+    );
+  }, []);
+
+  const handleOpenRemoteControls = () => {
+    if (typeof window === "undefined") return;
+
+    const currentUrl = new URL(window.location.href);
+    const remoteUrl = new URL(currentUrl.toString());
+
+    remoteUrl.searchParams.set(
+      REMOTE_CONTROLS_PARAM,
+      REMOTE_CONTROLS_CONTROLLER
+    );
+    remoteUrl.searchParams.delete(NO_CONTROLS_PARAM);
+
+    const opened = window.open(remoteUrl.toString(), "_blank");
+    if (!opened) {
+      console.warn(
+        "[v0-playground] Unable to open remote controls window. Please allow pop-ups for this site."
+      );
+      return;
+    }
+
+    opened.opener = null;
+    opened.focus?.();
+
+    const hostUrl = new URL(currentUrl.toString());
+    hostUrl.searchParams.set(NO_CONTROLS_PARAM, "true");
+    hostUrl.searchParams.delete(REMOTE_CONTROLS_PARAM);
+    window.history.replaceState(
+      {},
+      "",
+      `${hostUrl.pathname}${hostUrl.search}${hostUrl.hash}`
+    );
+
+    window.dispatchEvent(
+      new CustomEvent(REMOTE_CONTROLS_VISIBILITY_EVENT, {
+        detail: true,
+      })
+    );
+  };
+
+  const remoteControlConfig = config?.remoteControl;
+  const remoteControlEnabled =
+    !!remoteControlConfig &&
+    !isRemoteController &&
+    typeof window !== "undefined";
+  const remoteControlLabel =
+    typeof remoteControlConfig === "object" &&
+    remoteControlConfig?.label &&
+    remoteControlConfig.label.trim().length > 0
+      ? remoteControlConfig.label
+      : "Open Remote Controls";
+
   return (
     <div
       className={`order-2 md:order-1 w-full md:h-auto p-2 md:p-4 bg-stone-900 font-mono text-stone-300 transition-opacity duration-300 z-50 ${
@@ -433,17 +523,30 @@ const ControlPanel: React.FC = () => {
             </div>
           )}
         </div>
-        {previewUrl && (
-          <Button asChild>
-            <a
-              href={previewUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full px-4 py-2 text-sm text-center bg-stone-900 hover:bg-stone-800 text-white rounded-md border border-stone-700"
-            >
-              <SquareArrowOutUpRight /> Open in a New Tab
-            </a>
-          </Button>
+        {(remoteControlEnabled || previewUrl) && (
+          <div className="flex flex-col gap-2">
+            {remoteControlEnabled && (
+              <Button
+                type="button"
+                onClick={handleOpenRemoteControls}
+                className="w-full px-4 py-2 text-sm text-center bg-stone-900 hover:bg-stone-800 text-white rounded-md border border-stone-700"
+              >
+                {remoteControlLabel}
+              </Button>
+            )}
+            {previewUrl && (
+              <Button asChild>
+                <a
+                  href={previewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full px-4 py-2 text-sm text-center bg-stone-900 hover:bg-stone-800 text-white rounded-md border border-stone-700"
+                >
+                  <SquareArrowOutUpRight /> Open in a New Tab
+                </a>
+              </Button>
+            )}
+          </div>
         )}
       </div>
     </div>

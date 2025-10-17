@@ -116,7 +116,7 @@ function InnerPreview() {
     },
     {
       config: {
-        layout: "popover",
+        remoteControl: true,
       },
     }
   );

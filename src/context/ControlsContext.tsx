@@ -26,6 +26,12 @@ import {
   type ResolvedAdvancedPaletteConfig,
 } from "@/lib/advancedPalette";
 
+import {
+  REMOTE_CONTROL_CHANNEL_PREFIX,
+  REMOTE_CONTROLS_CONTROLLER,
+  REMOTE_CONTROLS_PARAM,
+} from "@/constants/remoteControl";
+
 type BaseControl = {
   hidden?: boolean;
   folder?: string;
@@ -62,6 +68,12 @@ type ControlsConfig = {
   mainLabel?: string;
   showGrid?: boolean;
   addAdvancedPaletteControl?: ResolvedAdvancedPaletteConfig;
+  remoteControl?:
+    | boolean
+    | {
+        label?: string;
+        channelId?: string;
+      };
 };
 
 type UseControlsConfig = Omit<ControlsConfig, "addAdvancedPaletteControl"> & {
@@ -73,10 +85,108 @@ type UseControlsOptions = {
   config?: UseControlsConfig;
 };
 
+type RemoteRole = "host" | "controller";
+
+type RemoteMessage =
+  | { type: "HELLO"; role: RemoteRole }
+  | { type: "REQUEST_STATE" }
+  | {
+      type: "SYNC_STATE";
+      values: Record<string, any>;
+      schema: RemoteControlsSchema;
+      config?: ControlsConfig;
+    }
+  | { type: "UPDATE_VALUE"; key: string; value: any; source: RemoteRole }
+  | { type: "TRIGGER_BUTTON"; key: string };
+
+type RemoteControlBase = {
+  hidden?: boolean;
+};
+
+type RemoteBooleanControl = RemoteControlBase & { type: "boolean" };
+type RemoteNumberControl = RemoteControlBase & {
+  type: "number";
+  min?: number;
+  max?: number;
+  step?: number;
+};
+type RemoteStringControl = RemoteControlBase & { type: "string" };
+type RemoteColorControl = RemoteControlBase & { type: "color" };
+type RemoteSelectControl = RemoteControlBase & {
+  type: "select";
+  options: string[];
+};
+type RemoteButtonControl = RemoteControlBase & {
+  type: "button";
+  label?: string;
+  supportsRemote?: boolean;
+};
+
+export type RemoteControlDefinition =
+  | RemoteBooleanControl
+  | RemoteNumberControl
+  | RemoteStringControl
+  | RemoteColorControl
+  | RemoteSelectControl
+  | RemoteButtonControl;
+
+export type RemoteControlsSchema = Record<string, RemoteControlDefinition>;
+
+const serializeControl = (
+  key: string,
+  control: ControlType
+): RemoteControlDefinition => {
+  switch (control.type) {
+    case "boolean":
+      return {
+        type: "boolean",
+        hidden: control.hidden,
+      };
+    case "number":
+      return {
+        type: "number",
+        hidden: control.hidden,
+        min: control.min,
+        max: control.max,
+        step: control.step,
+      };
+    case "string":
+      return {
+        type: "string",
+        hidden: control.hidden,
+      };
+    case "color":
+      return {
+        type: "color",
+        hidden: control.hidden,
+      };
+    case "select":
+      return {
+        type: "select",
+        hidden: control.hidden,
+        options: Object.keys(control.options ?? {}),
+      };
+    case "button":
+      return {
+        type: "button",
+        hidden: control.hidden,
+        label: control.label ?? key,
+        supportsRemote: Boolean(control.onClick),
+      };
+  }
+
+  const exhaustive: never = control;
+  throw new Error(
+    `Unsupported control type: ${(exhaustive as ControlType).type}`
+  );
+};
+
 type ControlsContextValue = {
   schema: ControlsSchema;
+  remoteSchema: RemoteControlsSchema;
   values: Record<string, any>;
   setValue: (key: string, value: any) => void;
+  triggerButton: (key: string) => void;
   registerSchema: (
     newSchema: ControlsSchema,
     opts?: {
@@ -86,6 +196,7 @@ type ControlsContextValue = {
   ) => void;
   componentName?: string;
   config?: ControlsConfig;
+  remoteRole: RemoteRole;
 };
 
 const ControlsContext = createContext<ControlsContextValue | null>(null);
@@ -98,20 +209,129 @@ export const useControlsContext = () => {
 
 export const ControlsProvider = ({ children }: { children: ReactNode }) => {
   const [schema, setSchema] = useState<ControlsSchema>({});
+  const [remoteSchema, setRemoteSchema] = useState<RemoteControlsSchema>({});
   const [values, setValues] = useState<Record<string, any>>({});
   const [config, setConfig] = useState<ControlsConfig>({
-    showCopyButton: true,
+    showCopyButton: false,
   });
   const [componentName, setComponentName] = useState<string | undefined>();
+  const [remoteRole, setRemoteRole] = useState<RemoteRole>("host");
+  const channelRef = useRef<BroadcastChannel | null>(null);
+  const valuesRef = useRef(values);
+  const schemaRef = useRef<ControlsSchema>({});
+  const remoteSchemaRef = useRef<RemoteControlsSchema>({});
+  const channelNameRef = useRef<string | null>(null);
+  const hostReadyRef = useRef(false);
+
+  useEffect(() => {
+    valuesRef.current = values;
+  }, [values]);
+
+  useEffect(() => {
+    schemaRef.current = schema;
+  }, [schema]);
+
+  useEffect(() => {
+    remoteSchemaRef.current = remoteSchema;
+  }, [remoteSchema]);
+
+  console.log("[ControlsProvider] render", {
+    remoteRole,
+    schemaKeys: Object.keys(schema),
+    remoteSchemaKeys: Object.keys(remoteSchema),
+    config,
+    hasChannel: Boolean(channelRef.current),
+  });
+
+  useEffect(() => {
+    if (remoteRole !== "host" || !hostReadyRef.current || !channelRef.current) {
+      return;
+    }
+
+    channelRef.current.postMessage({
+      type: "SYNC_STATE",
+      values: valuesRef.current,
+      schema: remoteSchemaRef.current,
+      config,
+    });
+  }, [remoteSchema, remoteRole, config]);
+
+  useEffect(() => {
+    if (remoteRole !== "host" || !hostReadyRef.current || !channelRef.current) {
+      return;
+    }
+
+    channelRef.current.postMessage({
+      type: "SYNC_STATE",
+      values: valuesRef.current,
+      schema: remoteSchemaRef.current,
+      config,
+    });
+  }, [values, remoteRole, config]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get(REMOTE_CONTROLS_PARAM) === REMOTE_CONTROLS_CONTROLLER) {
+      setRemoteRole("controller");
+    }
+  }, []);
+
+  const setValueInternal = (
+    key: string,
+    value: any,
+    { broadcast = true }: { broadcast?: boolean } = {}
+  ) => {
+    setValues((prev) => {
+      if (prev[key] === value) return prev;
+      const updated = { ...prev, [key]: value };
+      valuesRef.current = updated;
+      return updated;
+    });
+
+    if (
+      broadcast &&
+      channelRef.current &&
+      typeof channelRef.current.postMessage === "function"
+    ) {
+      const message: RemoteMessage = {
+        type: "UPDATE_VALUE",
+        key,
+        value,
+        source: remoteRole,
+      };
+      channelRef.current.postMessage(message);
+    }
+  };
+
+  const triggerButton = (key: string) => {
+    if (remoteRole === "controller") {
+      channelRef.current?.postMessage({
+        type: "TRIGGER_BUTTON",
+        key,
+      });
+      return;
+    }
+
+    const control = schemaRef.current[key];
+    if (control && control.type === "button") {
+      control.onClick?.();
+    }
+  };
 
   const setValue = (key: string, value: any) => {
-    setValues((prev) => ({ ...prev, [key]: value }));
+    setValueInternal(key, value);
   };
 
   const registerSchema = (
     newSchema: ControlsSchema,
     opts?: { componentName?: string; config?: UseControlsConfig }
   ) => {
+    console.log("[ControlsProvider] registerSchema start", {
+      remoteRole,
+      keys: Object.keys(newSchema),
+      hasChannel: Boolean(channelRef.current),
+    });
     if (opts?.componentName) {
       setComponentName(opts.componentName);
     }
@@ -148,21 +368,175 @@ export const ControlsProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
+      valuesRef.current = updated;
       return updated;
     });
+
+    const serialized: RemoteControlsSchema = Object.fromEntries(
+      Object.entries(newSchema).map(([key, control]) => [
+        key,
+        serializeControl(key, control),
+      ])
+    );
+    const nextRemoteSchema = {
+      ...remoteSchemaRef.current,
+      ...serialized,
+    };
+    remoteSchemaRef.current = nextRemoteSchema;
+    setRemoteSchema(nextRemoteSchema);
+
+    console.log("[ControlsProvider] remote schema updated", {
+      remoteRole,
+      keys: Object.keys(nextRemoteSchema),
+      hostReady: hostReadyRef.current,
+    });
+    if (remoteRole === "host") {
+      hostReadyRef.current = true;
+      console.log("[ControlsProvider] host ready, broadcasting initial state");
+      if (channelRef.current && channelNameRef.current) {
+        channelRef.current.postMessage({
+          type: "SYNC_STATE",
+          values: valuesRef.current,
+          schema: remoteSchemaRef.current,
+          config,
+        });
+      }
+    }
   };
 
   const contextValue = useMemo(
     () => ({
       schema,
+      remoteSchema,
       values,
       setValue,
+      triggerButton,
       registerSchema,
       componentName,
       config,
+      remoteRole,
     }),
-    [schema, values, componentName, config]
+    [schema, remoteSchema, values, componentName, config, remoteRole]
   );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!config?.remoteControl && remoteRole !== "controller") return;
+    if (typeof BroadcastChannel === "undefined") return;
+
+    console.log("[ControlsProvider] setting up channel", {
+      remoteRole,
+      channelRef: Boolean(channelRef.current),
+      config,
+    });
+
+    const customChannelId =
+      typeof config.remoteControl === "object"
+        ? config.remoteControl.channelId
+        : undefined;
+    const channelName = `${REMOTE_CONTROL_CHANNEL_PREFIX}:${
+      customChannelId ?? window.location.pathname
+    }`;
+    channelNameRef.current = channelName;
+    const channel = new BroadcastChannel(channelName);
+    channelRef.current = channel;
+
+    const postState = () => {
+      if (remoteRole === "host" && !hostReadyRef.current) return;
+      console.log("[ControlsProvider] postState", {
+        remoteRole,
+        hostReady: hostReadyRef.current,
+        values: Object.keys(valuesRef.current),
+        schema: Object.keys(remoteSchemaRef.current),
+      });
+      const message: RemoteMessage = {
+        type: "SYNC_STATE",
+        values: valuesRef.current,
+        schema: remoteSchemaRef.current,
+        config,
+      };
+      channel.postMessage(message);
+    };
+
+    channel.onmessage = (event: MessageEvent<RemoteMessage>) => {
+      const message = event.data;
+      console.log("[ControlsProvider] onmessage", message);
+      switch (message?.type) {
+        case "HELLO": {
+          if (
+            remoteRole === "host" &&
+            message.role === "controller" &&
+            hostReadyRef.current
+          ) {
+            postState();
+          }
+          break;
+        }
+        case "REQUEST_STATE": {
+          if (remoteRole === "host") {
+            postState();
+          }
+          break;
+        }
+        case "SYNC_STATE": {
+          if (!message?.values || typeof message.values !== "object") return;
+          setValues((prev) => {
+            const updated = { ...prev, ...message.values };
+            valuesRef.current = updated;
+            return updated;
+          });
+          if (remoteRole === "controller" && message?.schema) {
+            setRemoteSchema(message.schema);
+          }
+          if (remoteRole === "controller" && message?.config) {
+            setConfig((prev) => ({
+              ...prev,
+              ...message.config,
+            }));
+          }
+          break;
+        }
+        case "UPDATE_VALUE": {
+          if (message?.source === remoteRole) {
+            return;
+          }
+          setValueInternal(message.key, message.value, {
+            broadcast: false,
+          });
+          break;
+        }
+        case "TRIGGER_BUTTON": {
+          if (remoteRole !== "host") return;
+          const control = schemaRef.current[message.key];
+          if (control && control.type === "button") {
+            control.onClick?.();
+          }
+          break;
+        }
+        default:
+          break;
+      }
+    };
+
+    channel.postMessage({
+      type: "HELLO",
+      role: remoteRole,
+    });
+    console.log("[ControlsProvider] sent HELLO", remoteRole);
+
+    if (remoteRole === "controller") {
+      channel.postMessage({
+        type: "REQUEST_STATE",
+      });
+    } else {
+      postState();
+    }
+
+    return () => {
+      channel.close();
+      channelRef.current = null;
+    };
+  }, [config?.remoteControl, remoteRole]);
 
   return (
     <ControlsContext.Provider value={contextValue}>
@@ -226,6 +600,10 @@ export const useControls = <T extends ControlsSchema>(
 
   // Register the merged schema
   useEffect(() => {
+    console.log("[useControls] registerSchema effect", {
+      componentName: options?.componentName,
+      config: options?.config,
+    });
     ctx.registerSchema(mergedSchema, options);
   }, [JSON.stringify(mergedSchema), JSON.stringify(options)]);
 

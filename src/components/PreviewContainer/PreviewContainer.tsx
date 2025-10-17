@@ -7,9 +7,14 @@ import { MOBILE_CONTROL_PANEL_PEEK } from "@/constants/layout";
 type Props = {
   children?: React.ReactNode;
   hideControls?: boolean;
+  className?: string;
 };
 
-const PreviewContainer: React.FC<Props> = ({ children, hideControls }) => {
+const PreviewContainer: React.FC<Props> = ({
+  children,
+  hideControls,
+  className,
+}) => {
   const { config } = useControlsContext();
   const { leftPanelWidth, isDesktop, isHydrated, containerRef } =
     useResizableLayout();
@@ -44,7 +49,9 @@ const PreviewContainer: React.FC<Props> = ({ children, hideControls }) => {
   return (
     <div
       ref={previewRef}
-      className="order-1 md:order-2 flex-1 bg-black overflow-auto flex items-center justify-center relative"
+      className={`order-1 md:order-2 flex-1 bg-black overflow-auto flex items-center justify-center relative ${
+        className ?? ""
+      }`}
       style={previewStyle}
     >
       <div className="w-screen h-screen" style={previewInnerStyle}>
