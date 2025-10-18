@@ -91,6 +91,9 @@ const preset: Partial<Config> = {
           to: { transform: "rotate(360deg)" },
         },
       },
+      zIndex: {
+        max: "99999999",
+      },
     },
   },
   plugins: [
