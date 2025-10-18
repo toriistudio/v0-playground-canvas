@@ -145,6 +145,8 @@ export type AdvancedPaletteControlConfig = {
   gradientSteps?: number;
   onPaletteChange?: (palette: AdvancedPalette) => void;
   onInteraction?: () => void;
+  folder?: string;
+  folderPlacement?: "top" | "bottom";
 };
 
 export type ResolvedAdvancedPaletteConfig = AdvancedPaletteControlConfig & {

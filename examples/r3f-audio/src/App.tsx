@@ -249,6 +249,8 @@ function RadialRipplesScene() {
         type: "button" as const,
         render: renderControls,
         playbackState: isPlaying ? "playing" : "paused",
+        folder: "Audio",
+        folderPlacement: "top",
       },
     }),
     [renderControls, isPlaying]

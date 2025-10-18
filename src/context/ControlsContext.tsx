@@ -28,6 +28,8 @@ import {
 
 type BaseControl = {
   hidden?: boolean;
+  folder?: string;
+  folderPlacement?: "top" | "bottom";
 };
 
 export type ControlType =

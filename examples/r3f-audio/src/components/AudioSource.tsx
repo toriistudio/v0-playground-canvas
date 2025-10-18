@@ -18,7 +18,7 @@ const AudioSource: FC<AudioSourceProps> = ({
   return (
     <div className="flex w-full flex-col gap-3">
       <span className="text-xs font-semibold uppercase tracking-wide text-stone-200">
-        Audio Source
+        Source
       </span>
       <label className="group flex w-full cursor-pointer items-center justify-between gap-3 overflow-hidden rounded-md border border-stone-700 bg-stone-900 px-3 py-2 text-sm transition hover:border-stone-500">
         <span className="min-w-0 flex-1 truncate text-stone-100 group-hover:text-white">
