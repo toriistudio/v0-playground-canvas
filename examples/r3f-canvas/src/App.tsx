@@ -58,6 +58,7 @@ function InnerPreview() {
         min: 0.01,
         max: 1,
         step: 0.01,
+        folder: "Particle Settings",
       },
       displacementStrength: {
         type: "number",
@@ -65,6 +66,7 @@ function InnerPreview() {
         min: 0,
         max: 10,
         step: 0.5,
+        folder: "Particle Settings",
       },
       glowSizeFactor: {
         type: "number",
@@ -72,13 +74,22 @@ function InnerPreview() {
         min: 0.05,
         max: 1,
         step: 0.05,
+        folder: "Particle Settings",
       },
-      intensityScale: { type: "number", value: 1, min: 0, max: 5, step: 0.01 },
-      color: { type: "color", value: "#ffffff" },
+      intensityScale: {
+        type: "number",
+        value: 1,
+        min: 0,
+        max: 5,
+        step: 0.01,
+        folder: "Particle Settings",
+      },
+      color: { type: "color", value: "#ffffff", folder: "Appearance" },
       easing: {
         options: easingFns,
         value: "easeOutCubic",
         type: "select",
+        folder: "Appearance",
       },
       imageUpload: {
         type: "button",
@@ -100,6 +111,7 @@ function InnerPreview() {
             />
           </>
         ),
+        folder: "Assets",
       },
     },
     {
