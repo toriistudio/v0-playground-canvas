@@ -12,3 +12,11 @@ export {
 
 // Type exports
 export type { ControlsSchema, ControlType } from "@/context/ControlsContext";
+export {
+  computePaletteGradient,
+  clonePalette,
+  createPaletteSignature,
+  type AdvancedPalette,
+  type AdvancedPaletteControlConfig,
+  type PaletteChannelKey,
+} from "@/lib/advancedPalette";

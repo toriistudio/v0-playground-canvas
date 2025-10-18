@@ -2,7 +2,7 @@
   "version": "v1",
   "packages": {
     "@toriistudio/v0-playground-canvas": {
-      "signature": "cd11259992fd09883df4d03051319d04",
+      "signature": "59a9e239bc6573e1fb97265a18f1bf7a",
       "file": true
     }
   }

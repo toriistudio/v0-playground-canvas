@@ -20,6 +20,7 @@ import { useControlsContext } from "@/context/ControlsContext";
 
 import { Button } from "@/components/ui/button";
 import { MOBILE_CONTROL_PANEL_PEEK } from "@/constants/layout";
+import AdvancedPaletteControl from "@/components/AdvancedPaletteControl";
 
 const ControlPanel: React.FC = () => {
   const [copied, setCopied] = useState(false);
@@ -30,13 +31,6 @@ const ControlPanel: React.FC = () => {
     useControlsContext();
 
   const previewUrl = usePreviewUrl(values);
-
-  const normalControls = Object.entries(schema).filter(
-    ([, control]) => control.type !== "button" && !control.hidden
-  );
-  const buttonControls = Object.entries(schema).filter(
-    ([, control]) => control.type === "button" && !control.hidden
-  );
 
   const jsx = useMemo(() => {
     if (!componentName) return "";
@@ -49,6 +43,15 @@ const ControlPanel: React.FC = () => {
       .join(" ");
     return `<${componentName} ${props} />`;
   }, [componentName, values]);
+
+  const normalControls = Object.entries(schema).filter(
+    ([, control]) => control.type !== "button" && !control.hidden
+  );
+  const buttonControls = Object.entries(schema).filter(
+    ([, control]) => control.type === "button" && !control.hidden
+  );
+  const hasButtonControls = buttonControls.length > 0;
+  const shouldShowCopyButton = Boolean(jsx) && config?.showCopyButton !== false;
 
   // Format raw schema keys into human-friendly labels
   const labelize = (key: string) =>
@@ -100,6 +103,32 @@ const ControlPanel: React.FC = () => {
         </div>
 
         <div className="space-y-6">
+          {hasButtonControls && (
+            <div className="flex flex-wrap gap-2">
+              {buttonControls.map(([key, control]) =>
+                control.type === "button" ? (
+                  <div
+                    key={`control-panel-custom-${key}`}
+                    className="flex-1 [&_[data-slot=button]]:w-full"
+                  >
+                    {control.render ? (
+                      control.render()
+                    ) : (
+                      <button
+                        onClick={control.onClick}
+                        className="w-full px-4 py-2 text-sm bg-stone-800 hover:bg-stone-700 text-white rounded-md shadow"
+                      >
+                        {control.label ?? key}
+                      </button>
+                    )}
+                  </div>
+                ) : null
+              )}
+            </div>
+          )}
+          {config?.addAdvancedPaletteControl && (
+            <AdvancedPaletteControl config={config.addAdvancedPaletteControl} />
+          )}
           {normalControls.map(([key, control]) => {
             const value = values[key];
 
@@ -218,55 +247,28 @@ const ControlPanel: React.FC = () => {
                 return null;
             }
           })}
-          {(buttonControls.length > 0 || jsx) && (
-            <div>
-              {jsx && config?.showCopyButton !== false && (
-                <div key="control-panel-jsx" className="flex-1 pt-4">
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(jsx);
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 5000);
-                    }}
-                    className="w-full px-4 py-2 text-sm bg-stone-800 hover:bg-stone-700 text-white rounded-md flex items-center justify-center gap-2 shadow"
-                  >
-                    {copied ? (
-                      <>
-                        <Check className="w-4 h-4" />
-                        Copied
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-4 h-4" />
-                        Copy to Clipboard
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
-              {buttonControls.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-4">
-                  {buttonControls.map(([key, control]) =>
-                    control.type === "button" ? (
-                      <div
-                        key={`control-panel-custom-${key}`}
-                        className="flex-1 [&_[data-slot=button]]:w-full"
-                      >
-                        {control.render ? (
-                          control.render()
-                        ) : (
-                          <button
-                            onClick={control.onClick}
-                            className="w-full px-4 py-2 text-sm bg-stone-800 hover:bg-stone-700 text-white rounded-md shadow"
-                          >
-                            {control.label ?? key}
-                          </button>
-                        )}
-                      </div>
-                    ) : null
-                  )}
-                </div>
-              )}
+          {shouldShowCopyButton && (
+            <div key="control-panel-jsx" className="flex-1 pt-4">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(jsx);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 5000);
+                }}
+                className="w-full px-4 py-2 text-sm bg-stone-800 hover:bg-stone-700 text-white rounded-md flex items-center justify-center gap-2 shadow"
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    Copy to Clipboard
+                  </>
+                )}
+              </button>
             </div>
           )}
         </div>
