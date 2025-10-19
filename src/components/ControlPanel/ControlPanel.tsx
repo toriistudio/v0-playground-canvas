@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { Check, Copy, SquareArrowOutUpRight, ChevronDown } from "lucide-react";
 
 import { usePreviewUrl } from "@/hooks/usePreviewUrl";
@@ -133,7 +133,53 @@ const ControlPanel: React.FC = () => {
 
   const hasRootButtonControls = rootButtonControls.length > 0;
   const hasAnyFolders = folderGroups.length > 0;
-  const shouldShowCopyButton = Boolean(jsx) && config?.showCopyButton !== false;
+  const jsonToComponentString = useCallback(
+    ({
+      componentName: componentNameOverride,
+      props,
+    }: {
+      componentName?: string;
+      props: Record<string, unknown>;
+    }) => {
+      const resolvedComponentName = componentNameOverride ?? componentName;
+      if (!resolvedComponentName) return "";
+
+      const formatProp = (key: string, value: unknown): string | null => {
+        if (value === undefined) return null;
+        if (value === null) return `${key}={null}`;
+        if (typeof value === "string") return `${key}="${value}"`;
+        if (typeof value === "number" || typeof value === "boolean") {
+          return `${key}={${value}}`;
+        }
+        if (typeof value === "bigint") {
+          return `${key}={${value.toString()}n}`;
+        }
+        return `${key}={${JSON.stringify(value)}}`;
+      };
+
+      const formattedProps = Object.entries(props ?? {})
+        .map(([key, value]) => formatProp(key, value))
+        .filter((prop): prop is string => Boolean(prop))
+        .join(" ");
+
+      if (!formattedProps) {
+        return `<${resolvedComponentName} />`;
+      }
+
+      return `<${resolvedComponentName} ${formattedProps} />`;
+    },
+    [componentName]
+  );
+  const copyText =
+    config?.showCopyButtonFn?.({
+      componentName,
+      values,
+      schema,
+      jsx,
+      jsonToComponentString,
+    }) ?? jsx;
+  const shouldShowCopyButton =
+    config?.showCopyButton !== false && Boolean(copyText);
 
   // Format raw schema keys into human-friendly labels
   const labelize = (key: string) =>
@@ -412,7 +458,8 @@ const ControlPanel: React.FC = () => {
             <div key="control-panel-jsx" className="flex-1 pt-4">
               <button
                 onClick={() => {
-                  navigator.clipboard.writeText(jsx);
+                  if (!copyText) return;
+                  navigator.clipboard.writeText(copyText);
                   setCopied(true);
                   setTimeout(() => setCopied(false), 5000);
                 }}

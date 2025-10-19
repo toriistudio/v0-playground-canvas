@@ -473,7 +473,7 @@
   integrity sha512-n6BE/eA2MoGTeASIAJE3SSI2PGysk3FNcVYCpl+aK9ByR/I3bzvBd0vOV/4r4bdsBhYXiABPoM1EcjZvibqNAA==
 
 "@toriistudio/v0-playground-canvas@file:.yalc/@toriistudio/v0-playground-canvas":
-  version "0.1.9"
+  version "0.1.10"
 
 "@types/babel__core@^7.20.5":
   version "7.20.5"

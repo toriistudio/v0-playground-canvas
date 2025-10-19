@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useEffect, useRef } from "react";
 import {
   PlaygroundCanvas,
   useAdvancedPaletteControls,
@@ -57,11 +58,33 @@ function MeshGradientScene() {
     control: { folder: "Colors" },
   });
 
+  const hexColorsRef = useRef(hexColors);
+
+  useEffect(() => {
+    hexColorsRef.current = hexColors;
+  }, [hexColors]);
+
+  const showCopyButtonFn = useCallback(({ values, jsonToComponentString }) => {
+    const newValues = Object.fromEntries(
+      Object.entries(values).filter(([key]) =>
+        Object.prototype.hasOwnProperty.call(CONTROL_SCHEMA, key)
+      )
+    );
+
+    return jsonToComponentString({
+      props: {
+        ...newValues,
+        colors: hexColorsRef.current,
+      },
+    });
+  }, []);
+
   const controls = useControls(CONTROL_SCHEMA, {
+    componentName: "MeshGradient",
     config: {
       mainLabel: "Mesh Gradient Controls",
       showGrid: false,
-      showCopyButton: true,
+      showCopyButtonFn,
       addAdvancedPaletteControl: controlConfig,
     },
   });

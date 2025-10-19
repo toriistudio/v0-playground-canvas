@@ -57,8 +57,20 @@ export type ControlType =
 
 export type ControlsSchema = Record<string, ControlType>;
 
+type CopyButtonFnArgs = {
+  componentName?: string;
+  values: Record<string, any>;
+  schema: ControlsSchema;
+  jsx: string;
+  jsonToComponentString: (options: {
+    componentName?: string;
+    props: Record<string, unknown>;
+  }) => string;
+};
+
 type ControlsConfig = {
   showCopyButton?: boolean;
+  showCopyButtonFn?: (args: CopyButtonFnArgs) => string | null | undefined;
   mainLabel?: string;
   showGrid?: boolean;
   addAdvancedPaletteControl?: ResolvedAdvancedPaletteConfig;
