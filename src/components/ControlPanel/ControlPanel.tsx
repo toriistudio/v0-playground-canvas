@@ -45,7 +45,7 @@ const ControlPanel: React.FC = () => {
     return `<${componentName} ${props} />`;
   }, [componentName, values]);
 
-  type ControlEntry = [string, typeof schema[string]];
+  type ControlEntry = [string, (typeof schema)[string]];
 
   const visibleEntries = Object.entries(schema).filter(
     ([, control]) => !control.hidden
@@ -192,7 +192,7 @@ const ControlPanel: React.FC = () => {
 
   const renderButtonControl = (
     key: string,
-    control: Extract<typeof schema[string], { type: "button" }>,
+    control: Extract<(typeof schema)[string], { type: "button" }>,
     variant: "root" | "folder"
   ) => (
     <div
@@ -218,7 +218,7 @@ const ControlPanel: React.FC = () => {
 
   const renderControl = (
     key: string,
-    control: typeof schema[string],
+    control: (typeof schema)[string],
     variant: "root" | "folder"
   ) => {
     if (control.type === "button") {
@@ -315,10 +315,7 @@ const ControlPanel: React.FC = () => {
               <Label className="min-w-fit" htmlFor={key}>
                 {labelize(key)}
               </Label>
-              <Select
-                value={value}
-                onValueChange={(val) => setValue(key, val)}
-              >
+              <Select value={value} onValueChange={(val) => setValue(key, val)}>
                 <SelectTrigger className="flex-1 cursor-pointer">
                   <SelectValue placeholder="Select option" />
                 </SelectTrigger>
@@ -426,7 +423,7 @@ const ControlPanel: React.FC = () => {
 
   return (
     <div
-      className={`order-2 md:order-1 w-full md:h-auto p-2 md:p-4 bg-stone-900 font-mono text-stone-300 transition-opacity duration-300 z-50 ${
+      className={`order-2 md:order-1 w-full md:h-auto p-2 md:p-4 bg-stone-900 font-mono text-stone-300 transition-opacity duration-300 z-max ${
         !isHydrated ? "opacity-0" : "opacity-100"
       }`}
       onPointerDown={(e) => e.stopPropagation()}
