@@ -1,12 +1,6 @@
 "use client";
 
 import {
-  PlaygroundCanvas,
-  computePaletteGradient,
-  clonePalette,
-  useControls,
-} from "@toriistudio/v0-playground-canvas";
-import {
   type ChangeEvent,
   useCallback,
   useEffect,
@@ -14,6 +8,11 @@ import {
   useRef,
   useState,
 } from "react";
+import {
+  useControls,
+  PlaygroundCanvas,
+  useAdvancedPaletteControls,
+} from "@toriistudio/v0-playground-canvas";
 
 import RadialRipples, {
   type RadialRipplesHandle,
@@ -25,21 +24,11 @@ import AudioSource from "@/components/AudioSource";
 
 const DEFAULT_TRACK_LABEL = "Built-in track";
 
-const DEFAULT_PALETTE: ShaderPalette = {
-  A: { r: 0.5, g: 0.5, b: 0.5 },
-  B: { r: 0.5, g: 0.5, b: 0.5 },
-  C: { r: 1.0, g: 1.0, b: 1.0 },
-  D: { r: 0.0, g: 0.1, b: 0.2 },
-};
-
 function RadialRipplesScene() {
   const [audioObjectUrl, setAudioObjectUrl] = useState<string | null>(null);
   const [fileLabel, setFileLabel] = useState(DEFAULT_TRACK_LABEL);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isAudioLoading, setIsAudioLoading] = useState(false);
-  const [palette, setPalette] = useState<ShaderPalette>(() =>
-    clonePalette(DEFAULT_PALETTE)
-  );
   const [overlaySuppressed, setOverlaySuppressed] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const shaderRef = useRef<RadialRipplesHandle | null>(null);
@@ -203,14 +192,16 @@ function RadialRipplesScene() {
     })();
   }, [shaderRef]);
 
-  const handlePaletteChange = useCallback((nextPalette: ShaderPalette) => {
-    setPalette(clonePalette(nextPalette));
-  }, []);
-
-  const paletteGradient = useMemo(
-    () => computePaletteGradient(palette),
-    [palette]
-  );
+  const {
+    palette,
+    paletteGradient,
+    controlConfig: paletteControlConfig,
+  } = useAdvancedPaletteControls({
+    control: {
+      folder: "Colors",
+      onInteraction: suppressOverlay,
+    },
+  });
 
   const renderControls = useCallback(
     () => (
@@ -246,7 +237,7 @@ function RadialRipplesScene() {
   const controlSchema = useMemo(
     () => ({
       playbackAndAudio: {
-        type: "button" as const,
+        type: "button",
         render: renderControls,
         playbackState: isPlaying ? "playing" : "paused",
         folder: "Audio",
@@ -260,11 +251,7 @@ function RadialRipplesScene() {
     config: {
       mainLabel: "Audio Radial Controls",
       showCopyButton: false,
-      addAdvancedPaletteControl: {
-        defaultPalette: DEFAULT_PALETTE,
-        onPaletteChange: handlePaletteChange,
-        onInteraction: suppressOverlay,
-      },
+      addAdvancedPaletteControl: paletteControlConfig,
     },
   });
 

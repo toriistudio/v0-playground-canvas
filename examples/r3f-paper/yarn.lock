@@ -369,6 +369,18 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
+"@paper-design/shaders-react@^0.0.60":
+  version "0.0.60"
+  resolved "https://registry.yarnpkg.com/@paper-design/shaders-react/-/shaders-react-0.0.60.tgz#f42d4d2d384464670504fd903a3b5a8ddd648bc3"
+  integrity sha512-mlEr4HqiUykAvYx4XepS/eQ4oJhrvKZRc04ICfEeDfwmcj/Bpjpg7PjDuRVKARR4qr4DqXzhVpsYyA+AiNMi4w==
+  dependencies:
+    "@paper-design/shaders" "0.0.60"
+
+"@paper-design/shaders@0.0.60":
+  version "0.0.60"
+  resolved "https://registry.yarnpkg.com/@paper-design/shaders/-/shaders-0.0.60.tgz#08cad8e036204c2481b1321955967c4d4f563497"
+  integrity sha512-z2xPEpPysbNReWnMya2NDZPKwELA+Mat4o9HtZjAlolazL0KS3mJfx4jdMQPn8wDsJwUkLEjBYodQzndmQPi+w==
+
 "@pkgjs/parseargs@^0.11.0":
   version "0.11.0"
   resolved "https://registry.yarnpkg.com/@pkgjs/parseargs/-/parseargs-0.11.0.tgz#a77ea742fab25775145434eb1d2328cf5013ac33"
